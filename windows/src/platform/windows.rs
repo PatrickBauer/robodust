@@ -638,6 +638,11 @@ pub mod fileops {
         // One operation per item, so every error and refusal belongs to the item it was about.
         let mut errors: Vec<(PathBuf, String)> = Vec::new();
         for t in &allowed {
+            // Again right before the move: an earlier item may have waited on a dialog or a slow disk.
+            if let Some(why) = refusal(t, root) {
+                errors.push((t.path.clone(), why));
+                continue;
+            }
             let result: Result<bool, String> = unsafe {
                 CoCreateInstance::<_, IFileOperation>(&FileOperation, None, CLSCTX_ALL)
                     .map_err(|e| e.message())
@@ -671,7 +676,7 @@ pub mod fileops {
             }
         }
         // The filesystem decides what happened, not the shell's answer.
-        let records = recycle_records(started);
+        let records = recycle_records(root, started);
         for t in allowed {
             if std::fs::symlink_metadata(&t.path).is_err() {
                 out.done.push(t.index);
@@ -704,10 +709,9 @@ pub mod fileops {
         deleted: u64,
     }
 
-    /// Reads the Recycle Bin's own index files ($I…) on the desktop's drive, newest first.
-    fn recycle_records(since: SystemTime) -> Vec<Record> {
-        let desk = desktop_dir();
-        let drive: PathBuf = desk.components().take(2).collect();
+    /// Reads the Recycle Bin's own index files ($I…) on the cleaned folder's drive, newest first.
+    fn recycle_records(root: &Path, since: SystemTime) -> Vec<Record> {
+        let drive: PathBuf = root.components().take(2).collect();
         let since_ft = since
             .duration_since(SystemTime::UNIX_EPOCH)
             .map(|d| d.as_secs() + 11_644_473_600)

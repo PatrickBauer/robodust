@@ -372,7 +372,11 @@ impl App {
         match a {
             Action::Start => self.begin(),
             Action::TogglePause => {
-                if let Some(f) = self.floor.as_mut() {
+                // Only while the robot is out cleaning: later screens have no Resume button.
+                if let Some(f) = self.floor.as_mut()
+                    && (f.sim.paused || f.sim.phase < Phase::Done)
+                    && self.model.delete_countdown.is_none()
+                {
                     f.sim.paused = !f.sim.paused;
                 }
             }
@@ -846,6 +850,12 @@ impl App {
                 Err(TryRecvError::Empty) => self.job = Some(Job::Undo { rx }),
                 Err(TryRecvError::Disconnected) => self.model.result = Some(worker_died("Undo didn't finish")),
             },
+        }
+        // A job just ended: the panel stops its periodic redraw once nothing runs, so show the result now.
+        if self.job.is_none()
+            && let Some(p) = &self.panel
+        {
+            p.s.window.request_redraw();
         }
     }
 
