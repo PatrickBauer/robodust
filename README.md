@@ -56,6 +56,10 @@ open build/RoboDust.app
 
 Start with the sample mess. The first real run will ask for Finder and Desktop access.
 
+## Windows
+
+There's a Windows port in [`windows/`](windows/README.md). It reads your real desktop from Explorer and draws the same robot with wgpu.
+
 ## Helping out
 
 Bug reports and ideas are very welcome, and so are pull requests. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first, mostly so you don't test something on your own desktop by accident.
