@@ -4,7 +4,7 @@ A robot vacuum for your Mac desktop. It drives around your screen and eats your 
 
 ![RoboDust cleaning a messy desktop](docs/robodust.jpg)
 
-**[Download for Mac](https://robodust.muhraufan.com/releases/RoboDust-0.5.dmg)** (4 MB, free, macOS 14 or later, Apple silicon and Intel)
+**[Download for Mac](https://robodust.muhraufan.com/releases/RoboDust-latest.dmg)** (4 MB, free, macOS 14 or later, Apple silicon and Intel) or [play with it in your browser](https://robodust.muhraufan.com/#demo)
 
 I had 300-something things on my desktop, mostly screenshots, and no plans to sort them. Then I saw someone make an app that lets you hide your desktop under a rug, and it was so good that I got annoyed I hadn't thought of it. So I made the version where you hire a robot instead.
 
