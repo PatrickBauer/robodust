@@ -62,7 +62,7 @@ Bug reports and ideas are very welcome, and so are pull requests. Please read [C
 
 ## Thanks
 
-Updates are handled by [Sparkle](https://sparkle-project.org). The app is by me, [Raufan](https://muhraufan.com), with a lot of help from Claude.
+Updates are handled by [Sparkle](https://sparkle-project.org). The app is designed by me, [Raufan](https://muhraufan.com), with a lot of implementation help from Claude.
 
 If it made you smile, a star is nice, and you can also [buy the robot a new bag](https://www.buymeacoffee.com/notmegapixels).
 
