@@ -44,6 +44,16 @@ pub fn known_folder(id: &windows::core::GUID) -> Option<PathBuf> {
     }
 }
 
+/// Windows' text for an error, or its code where there is none (Wine has no text for most).
+fn why(e: &windows::core::Error) -> String {
+    let m = e.message();
+    if m.trim().is_empty() {
+        format!("error {:#010x}", e.code().0)
+    } else {
+        m
+    }
+}
+
 pub fn desktop_dir() -> PathBuf {
     known_folder(&FOLDERID_Desktop).unwrap_or_else(|| PathBuf::from(std::env::var("USERPROFILE").unwrap_or_default()).join("Desktop"))
 }
@@ -159,8 +169,8 @@ pub fn desktop_grid(screen: &Screen) -> Option<(V2, V2)> {
 /// Read-only: asks Explorer for names and icon positions.
 pub fn read_desktop(screen: &Screen) -> Result<Vec<DesktopEntry>, DesktopError> {
     com_init();
-    let view = desktop_view().map_err(|e| DesktopError::Denied(e.message()))?;
-    let items = view_items(&view).map_err(|e| DesktopError::Denied(e.message()))?;
+    let view = desktop_view().map_err(|e| DesktopError::Denied(why(&e)))?;
+    let items = view_items(&view).map_err(|e| DesktopError::Denied(why(&e)))?;
     if items.is_empty() {
         return Err(DesktopError::NoItems);
     }
