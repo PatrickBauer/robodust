@@ -11,7 +11,7 @@ use crate::ui::{self, Action, Model, RunResult, Source, Stage};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::mpsc::{Receiver, channel};
+use std::sync::mpsc::{Receiver, TryRecvError, channel};
 use std::time::{Duration, Instant};
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize};
@@ -793,13 +793,17 @@ impl App {
                     let wait = Duration::from_secs_f32((1.5 - started.elapsed().as_secs_f32()).max(0.0) + 0.7);
                     self.pending_finish = Some((Instant::now() + wait, back));
                 }
-                Err(_) => {
+                Err(TryRecvError::Empty) => {
                     self.job = Some(Job::Action {
                         choice,
                         started,
                         excluded,
                         rx,
                     })
+                }
+                Err(TryRecvError::Disconnected) => {
+                    self.model.result = Some(worker_died("Something went wrong while changing your files"));
+                    self.pending_finish = Some((Instant::now() + Duration::from_millis(500), Vec::new()));
                 }
             },
             Job::Tidy { rx, moves, old } => match rx.try_recv() {
@@ -831,11 +835,16 @@ impl App {
                     });
                     self.pending_finish = Some((Instant::now() + Duration::from_millis(500), Vec::new()));
                 }
-                Err(_) => self.job = Some(Job::Tidy { rx, moves, old }),
+                Err(TryRecvError::Empty) => self.job = Some(Job::Tidy { rx, moves, old }),
+                Err(TryRecvError::Disconnected) => {
+                    self.model.result = Some(worker_died("Tidy up didn't finish"));
+                    self.pending_finish = Some((Instant::now() + Duration::from_millis(500), Vec::new()));
+                }
             },
             Job::Undo { rx } => match rx.try_recv() {
                 Ok(r) => self.model.result = Some(r),
-                Err(_) => self.job = Some(Job::Undo { rx }),
+                Err(TryRecvError::Empty) => self.job = Some(Job::Undo { rx }),
+                Err(TryRecvError::Disconnected) => self.model.result = Some(worker_died("Undo didn't finish")),
             },
         }
     }
@@ -1047,13 +1056,13 @@ impl ApplicationHandler for App {
                     let prep = self.prep.take().unwrap();
                     self.launch(el, prep.entries, sprites, prep.screen);
                 }
-                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                Err(TryRecvError::Disconnected) => {
                     // The sprite thread died (no usable font, say): back to the start, not stuck.
                     self.prep = None;
                     self.model.stage = Stage::Ready;
                     self.model.note = Some("RoboDust couldn't draw your icons, so it didn't start.".into());
                 }
-                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+                Err(TryRecvError::Empty) => {}
             }
         }
         self.poll_jobs();
@@ -1078,5 +1087,17 @@ impl ApplicationHandler for App {
         } else {
             el.set_control_flow(ControlFlow::WaitUntil(Instant::now() + Duration::from_millis(250)));
         }
+    }
+}
+
+/// A file worker that stopped without an answer. What it managed to do is in the history log.
+fn worker_died(title: &str) -> RunResult {
+    RunResult {
+        title: title.into(),
+        detail: Some(
+            "RoboDust lost track of what happened. Every change it made is listed in %LOCALAPPDATA%\\RoboDust\\history.log.".into(),
+        ),
+        can_undo: false,
+        is_error: true,
     }
 }
