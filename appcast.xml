@@ -3,13 +3,13 @@
   <channel>
     <title>RoboDust</title>
     <item>
-      <title>Version 0.3</title>
-      <pubDate>Mon, 02 Nov 2026 02:35:09 +0000</pubDate>
-      <sparkle:version>0.3</sparkle:version>
-      <sparkle:shortVersionString>0.3</sparkle:shortVersionString>
+      <title>Version 0.4</title>
+      <pubDate>Mon, 02 Nov 2026 02:53:36 +0000</pubDate>
+      <sparkle:version>0.4</sparkle:version>
+      <sparkle:shortVersionString>0.4</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>RoboDust now keeps itself up to date.</p>]]></description>
-      <enclosure url="https://robodust.muhraufan.com/releases/RoboDust-0.3.dmg" type="application/octet-stream" sparkle:edSignature="/sBneMcOagEiJav+0uAFGIlejIelq2/CiPgWc059cTTIZpEbKPJARGhJUl1gOYlCpvqBGx5DICJzFJs4GHPJAg==" length="3239424" />
+      <description><![CDATA[<p>A fresh install window and a fixed app icon.</p>]]></description>
+      <enclosure url="https://robodust.muhraufan.com/releases/RoboDust-0.4.dmg" type="application/octet-stream" sparkle:edSignature="YB4jXpFbaAFO/4pGulS9cE1vT4LcO8/HcKDrQRo5/DSjpSmP66LIOeQ8BoSeaL6ddWKnYs75t+xHcgiLJ+3rBg==" length="4230008" />
     </item>
   </channel>
 </rss>
