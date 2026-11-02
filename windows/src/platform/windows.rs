@@ -16,7 +16,7 @@ use windows::Win32::UI::Controls::IImageList;
 use windows::Win32::UI::Shell::Common::ITEMIDLIST;
 use windows::Win32::UI::Shell::*;
 use windows::Win32::UI::WindowsAndMessaging::*;
-use windows::core::{Interface, PCWSTR, PWSTR};
+use windows::core::{HRESULT, Interface, PCWSTR, PWSTR};
 
 pub fn com_init() {
     unsafe {
@@ -635,23 +635,39 @@ pub mod fileops {
             }
         }
         let started = SystemTime::now();
-        let mut err: Option<String> = None;
-        unsafe {
-            let op: windows::core::Result<IFileOperation> = CoCreateInstance(&FileOperation, None, CLSCTX_ALL);
-            match op {
-                Ok(op) => {
-                    let _ = op.SetOperationFlags(FOF_ALLOWUNDO | FOFX_RECYCLEONDELETE | FOF_NO_UI);
-                    for t in &allowed {
+        // One operation per item, so every error and refusal belongs to the item it was about.
+        let mut errors: Vec<(PathBuf, String)> = Vec::new();
+        for t in &allowed {
+            let result: Result<bool, String> = unsafe {
+                CoCreateInstance::<_, IFileOperation>(&FileOperation, None, CLSCTX_ALL)
+                    .map_err(|e| e.message())
+                    .and_then(|op| {
+                        // FOF_NO_UI alone would silently delete for good whatever can't be recycled (too big for the
+                        // Recycle Bin, a drive without one). FOF_WANTNUKEWARNING makes Windows ask first instead.
+                        // FOF_NO_CONNECTED_ELEMENTS: only the item asked for, not a saved page's _files folder.
+                        op.SetOperationFlags(
+                            FOF_ALLOWUNDO | FOFX_RECYCLEONDELETE | FOF_NO_UI | FOF_WANTNUKEWARNING | FOF_NO_CONNECTED_ELEMENTS,
+                        )
+                        .map_err(|e| e.message())?;
                         let w = wide(&t.path.to_string_lossy());
-                        if let Ok(item) = SHCreateItemFromParsingName::<_, _, IShellItem>(PCWSTR(w.as_ptr()), None) {
-                            let _ = op.DeleteItem(&item, None);
+                        let item: IShellItem = SHCreateItemFromParsingName(PCWSTR(w.as_ptr()), None).map_err(|e| e.message())?;
+                        op.DeleteItem(&item, None).map_err(|e| e.message())?;
+                        let done = op.PerformOperations();
+                        let aborted = op.GetAnyOperationsAborted().map(|b| b.as_bool()).unwrap_or(false);
+                        match done {
+                            Ok(()) => Ok(aborted),
+                            Err(e) if e.code() == COPYENGINE_E_USER_CANCELLED || e.code() == HRESULT::from_win32(ERROR_CANCELLED.0) => {
+                                Ok(true)
+                            }
+                            Err(e) => Err(e.message()),
                         }
-                    }
-                    if let Err(e) = op.PerformOperations() {
-                        err = Some(e.message());
-                    }
-                }
-                Err(e) => err = Some(e.message()),
+                    })
+            };
+            match result {
+                Ok(true) => errors.push((t.path.clone(), "It can't go to the Recycle Bin, so it was left alone".into())),
+                Ok(false) => {}
+                Err(e) if e.is_empty() => errors.push((t.path.clone(), "Windows couldn't move it".into())),
+                Err(e) => errors.push((t.path.clone(), e)),
             }
         }
         // The filesystem decides what happened, not the shell's answer.
@@ -673,8 +689,8 @@ pub mod fileops {
                     });
                 }
             } else {
-                out.failed
-                    .push((t.index, err.clone().unwrap_or_else(|| "Windows couldn't move it".into())));
+                let why = errors.iter().find(|(p, _)| *p == t.path).map(|(_, e)| e.clone());
+                out.failed.push((t.index, why.unwrap_or_else(|| "Windows couldn't move it".into())));
             }
         }
         log("recycle", &out, targets);

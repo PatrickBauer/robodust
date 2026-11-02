@@ -225,7 +225,11 @@ impl App {
             let info = adapter.get_info();
             crate::debug_log(&format!("adapter: {} ({:?}, {:?})", info.name, info.backend, info.device_type));
             let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-                required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+                // Every desktop item is one layer of the icon and label texture arrays.
+                required_limits: wgpu::Limits {
+                    max_texture_array_layers: adapter.limits().max_texture_array_layers,
+                    ..wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits())
+                },
                 ..Default::default()
             }))
             .expect("no device");
@@ -428,6 +432,20 @@ impl App {
         } else {
             entries::sample(size.x, size.y)
         };
+        // One texture layer per item; a desktop with more items than that runs with the first ones,
+        // and the rest are left exactly where they are.
+        let mut entries = entries;
+        let cap = self
+            .gpu
+            .as_ref()
+            .map_or(256, |g| g.device.limits().max_texture_array_layers as usize);
+        if entries.len() > cap {
+            self.model.note = Some(format!(
+                "Your desktop has {} items. RoboDust takes the first {cap}; the rest stay put.",
+                entries.len()
+            ));
+            entries.truncate(cap);
+        }
         self.model.stage = Stage::Preparing;
         self.model.prepared = 0;
         self.model.prepare_total = entries.len();
@@ -641,13 +659,21 @@ impl App {
 
     fn report(&mut self, choice: CleanMode, o: &Outcome, excluded: usize) {
         let n = o.done.len();
-        let noun = if n == 1 { "item" } else { "items" };
-        let mut title = if choice == CleanMode::Delete {
-            format!("Permanently deleted {n} {noun}")
-        } else {
-            format!("Moved {n} {noun} to the Recycle Bin")
-        };
         let mut notes = Vec::new();
+        let mut title = if choice == CleanMode::Delete {
+            format!("Permanently deleted {n} {}", if n == 1 { "item" } else { "items" })
+        } else {
+            // Gone without a Recycle Bin record: Windows asked, and the user agreed to delete it for good.
+            let nuked = n.saturating_sub(o.trashed.len());
+            if nuked > 0 {
+                notes.push(format!(
+                    "{nuked} didn't fit in the Recycle Bin and {} deleted for good, as you confirmed.",
+                    if nuked == 1 { "was" } else { "were" }
+                ));
+            }
+            let moved = n - nuked;
+            format!("Moved {moved} {} to the Recycle Bin", if moved == 1 { "item" } else { "items" })
+        };
         if !o.failed.is_empty() {
             notes.push(format!(
                 "{} couldn't be {} and stayed on your desktop.",
@@ -1016,9 +1042,18 @@ impl ApplicationHandler for App {
         // Sprites finished building: lay the floor.
         if let Some(prep) = &self.prep {
             self.model.prepared = prep.progress.load(Ordering::Relaxed);
-            if let Ok(sprites) = prep.rx.try_recv() {
-                let prep = self.prep.take().unwrap();
-                self.launch(el, prep.entries, sprites, prep.screen);
+            match prep.rx.try_recv() {
+                Ok(sprites) => {
+                    let prep = self.prep.take().unwrap();
+                    self.launch(el, prep.entries, sprites, prep.screen);
+                }
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    // The sprite thread died (no usable font, say): back to the start, not stuck.
+                    self.prep = None;
+                    self.model.stage = Stage::Ready;
+                    self.model.note = Some("RoboDust couldn't draw your icons, so it didn't start.".into());
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
             }
         }
         self.poll_jobs();

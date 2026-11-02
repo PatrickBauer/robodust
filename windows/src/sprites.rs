@@ -37,7 +37,7 @@ pub struct Fonts {
 }
 
 /// The first candidate that loads, with its bytes (FontVec can't be cloned).
-fn load_font_bytes(candidates: &[&str]) -> Option<(FontVec, Vec<u8>)> {
+fn load_font_bytes(candidates: &[String]) -> Option<(FontVec, Vec<u8>)> {
     candidates.iter().find_map(|p| {
         std::fs::read(p)
             .ok()
@@ -45,29 +45,46 @@ fn load_font_bytes(candidates: &[&str]) -> Option<(FontVec, Vec<u8>)> {
     })
 }
 
-fn load_font(candidates: &[&str]) -> Option<FontVec> {
-    load_font_bytes(candidates).map(|(f, _)| f)
+/// A font file in the Windows font folder, wherever Windows is installed.
+fn windows_font(file: &str) -> String {
+    let dir = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
+    format!("{dir}\\Fonts\\{file}")
+}
+
+fn paths(windows: &[&str], others: &[&str]) -> Vec<String> {
+    windows
+        .iter()
+        .map(|f| windows_font(f))
+        .chain(others.iter().map(|p| p.to_string()))
+        .collect()
 }
 
 pub fn fonts() -> &'static Fonts {
     static F: OnceLock<Fonts> = OnceLock::new();
     F.get_or_init(|| {
-        let (regular, regular_bytes) = load_font_bytes(&[
-            "C:\\Windows\\Fonts\\segoeui.ttf",
-            "/usr/share/fonts/noto/NotoSans-Regular.ttf",
-            "/usr/share/fonts/TTF/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
-        ])
+        let (regular, regular_bytes) = load_font_bytes(&paths(
+            &["segoeui.ttf", "arial.ttf"],
+            &[
+                "/usr/share/fonts/noto/NotoSans-Regular.ttf",
+                "/usr/share/fonts/TTF/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+                "/System/Library/Fonts/Supplemental/Arial.ttf",
+                "/Library/Fonts/Arial Unicode.ttf",
+            ],
+        ))
         .expect("no usable font found");
         // No bold face around: the regular one stands in.
-        let semibold = load_font(&[
-            "C:\\Windows\\Fonts\\seguisb.ttf",
-            "C:\\Windows\\Fonts\\segoeuib.ttf",
-            "/usr/share/fonts/noto/NotoSans-SemiBold.ttf",
-            "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        ])
+        let semibold = load_font_bytes(&paths(
+            &["seguisb.ttf", "segoeuib.ttf", "arialbd.ttf"],
+            &[
+                "/usr/share/fonts/noto/NotoSans-SemiBold.ttf",
+                "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+            ],
+        ))
+        .map(|(f, _)| f)
         .unwrap_or_else(|| FontVec::try_from_vec(regular_bytes).expect("font loaded once already"));
         Fonts { regular, semibold }
     })
