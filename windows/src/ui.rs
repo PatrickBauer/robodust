@@ -526,7 +526,7 @@ fn controls(ui: &mut egui::Ui, m: &mut Model, s: &Sim, actions: &mut Vec<Action>
         let (p, st) = half_buttons(
             ui,
             (if s.paused { "▶ Resume" } else { "⏸ Pause" }, ButtonKind::Quiet),
-            ("✕ Stop", ButtonKind::Quiet),
+            ("⏹ Stop", ButtonKind::Quiet),
         );
         if p {
             actions.push(Action::TogglePause);
