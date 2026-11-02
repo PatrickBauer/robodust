@@ -3,13 +3,13 @@
   <channel>
     <title>RoboDust</title>
     <item>
-      <title>Version 0.4</title>
-      <pubDate>Mon, 02 Nov 2026 02:53:36 +0000</pubDate>
-      <sparkle:version>0.4</sparkle:version>
-      <sparkle:shortVersionString>0.4</sparkle:shortVersionString>
+      <title>Version 0.5</title>
+      <pubDate>Mon, 02 Nov 2026 03:19:39 +0000</pubDate>
+      <sparkle:version>0.5</sparkle:version>
+      <sparkle:shortVersionString>0.5</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>A fresh install window and a fixed app icon.</p>]]></description>
-      <enclosure url="https://robodust.muhraufan.com/releases/RoboDust-0.4.dmg" type="application/octet-stream" sparkle:edSignature="YB4jXpFbaAFO/4pGulS9cE1vT4LcO8/HcKDrQRo5/DSjpSmP66LIOeQ8BoSeaL6ddWKnYs75t+xHcgiLJ+3rBg==" length="4230008" />
+      <description><![CDATA[<p>Faraway files now zip over to the robot, with no stretched streaks.</p>]]></description>
+      <enclosure url="https://robodust.muhraufan.com/releases/RoboDust-0.5.dmg" type="application/octet-stream" sparkle:edSignature="Ox7swSta6Hy/O/ilL+fVODsak3q2JSz1yaXtjQqv4QZ3KfvXufaE01D4FrFehpc70VQUvHwhrXIDPSw5n3FHDg==" length="4245982" />
     </item>
   </channel>
 </rss>
