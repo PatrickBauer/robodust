@@ -63,7 +63,8 @@ fn main() {
         test_root: arg_value(&args, "--test-root").map(std::path::PathBuf::from),
         test_mode: arg_value(&args, "--test-mode")
             .and_then(|m| m.parse().ok())
-            .and_then(sim::CleanMode::from_index),
+            .and_then(sim::CleanMode::from_index)
+            .filter(|m| m.offered()),
     };
     let event_loop = winit::event_loop::EventLoop::new().expect("event loop");
     let mut app = app::App::new(opts);

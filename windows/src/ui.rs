@@ -128,7 +128,12 @@ fn load_settings() -> (CleanMode, bool) {
     let mut skip = false;
     for line in s.lines() {
         if let Some(v) = line.strip_prefix("afterClean=") {
-            mode = v.parse().ok().and_then(CleanMode::from_index).unwrap_or(mode);
+            mode = v
+                .parse()
+                .ok()
+                .and_then(CleanMode::from_index)
+                .filter(|m| m.offered())
+                .unwrap_or(mode);
         }
         if let Some(v) = line.strip_prefix("skipFinalClick=") {
             skip = v == "1";
@@ -323,15 +328,7 @@ fn setup(ui: &mut egui::Ui, m: &mut Model, actions: &mut Vec<Action>) {
     );
     ui.add_space(6.0);
     ui.label(small("After cleaning").strong());
-    let mut changed = segmented(
-        ui,
-        &mut m.mode,
-        &[
-            (CleanMode::Tidy, "Tidy up"),
-            (CleanMode::Trash, "Recycle Bin"),
-            (CleanMode::Delete, "Delete"),
-        ],
-    );
+    let mut changed = segmented(ui, &mut m.mode, &[(CleanMode::Tidy, "Tidy up"), (CleanMode::Trash, "Recycle Bin")]);
     let ask = if m.skip_final_click {
         ""
     } else {

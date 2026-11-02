@@ -1,6 +1,6 @@
 # RoboDust for Windows
 
-The same robot vacuum, ported to Windows 10 and 11. It reads your real desktop icons from Explorer, cleans them up, and at the end sorts them into columns, moves them to the Recycle Bin, or deletes them.
+The same robot vacuum, ported to Windows 10 and 11. It reads your real desktop icons from Explorer, cleans them up, and at the end sorts them into columns or moves them to the Recycle Bin.
 
 ![RoboDust cleaning the sample mess on Windows 11](docs/robodust-windows.jpg)
 
@@ -11,7 +11,8 @@ It's a separate program from the Mac app, written in Rust: [wgpu](https://wgpu.r
 - The panel is a small window in the bottom-right corner instead of a menu bar popover.
 - "Trash" is the Recycle Bin. Undo puts the files back from the Recycle Bin where they came from.
 - Tidy up uses Explorer's own icon grid. It needs "Auto arrange icons" switched off (right-click the desktop, View).
-- Besides the Mac's rules, Trash and Delete also leave shortcuts (`.lnk`, `.url`), programs, items on the Public desktop, and This PC or the Recycle Bin alone. A OneDrive desktop gets the same warning as iCloud does on the Mac.
+- There's no Delete: after cleaning you pick Tidy up or Recycle Bin, so everything can be restored. (The code for it is still there, just not offered.)
+- Besides the Mac's rules, the Recycle Bin also leaves shortcuts (`.lnk`, `.url`), programs, items on the Public desktop, and This PC or the Recycle Bin alone. A OneDrive desktop gets the same warning as iCloud does on the Mac.
 - No auto-updates yet.
 
 The one file that changes anything on disk is the `fileops` module in [`src/platform/windows.rs`](src/platform/windows.rs). Every file it touches is logged to `%LOCALAPPDATA%\RoboDust\history.log`.
@@ -42,7 +43,7 @@ On Linux and macOS it builds too, but only runs the sample mess (on Linux the so
 Please don't. Use a virtual machine with a throwaway desktop, or `--test-root <folder>`, which makes a folder of junk stand in for the desktop. Other flags for development:
 
 - `--auto` starts a run right away.
-- `--test-mode 0|1|2` picks Tidy up, Recycle Bin or Delete with `--test-root`.
+- `--test-mode 0|1` picks Tidy up or Recycle Bin with `--test-root`.
 - `--debug` writes the graphics adapter, the frame times and what Explorer reports to `%LOCALAPPDATA%\RoboDust\debug.log`.
 
 Without a graphics card (a VM, Remote Desktop) Windows draws with its software renderer. It works, but only at a few frames per second.

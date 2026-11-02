@@ -20,6 +20,11 @@ impl CleanMode {
             CleanMode::Delete => 2,
         }
     }
+    /// Delete is still implemented but not offered on Windows: the panel only has Tidy up and
+    /// Recycle Bin (Patrick, 2026-11-02). Saved settings and dev flags can't pick it either.
+    pub fn offered(self) -> bool {
+        self != CleanMode::Delete
+    }
     pub fn from_index(i: i32) -> Option<CleanMode> {
         Some(match i {
             0 => CleanMode::Tidy,
