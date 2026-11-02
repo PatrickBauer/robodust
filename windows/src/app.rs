@@ -159,6 +159,8 @@ pub struct App {
     prep: Option<Prep>,
     job: Option<Job>,
     pending_finish: Option<(Instant, Vec<usize>)>,
+    /// The panel was closed while files were being changed: quit once that's done.
+    exit_requested: bool,
     undo: Option<Undo>,
     action_started: bool,
     countdown_until: Option<Instant>,
@@ -194,6 +196,7 @@ impl App {
             prep: None,
             job: None,
             pending_finish: None,
+            exit_requested: false,
             undo: None,
             action_started: false,
             countdown_until: None,
@@ -712,10 +715,15 @@ impl App {
                         is_error: false,
                     }
                 }
-                Undo::Tidy(old) => {
-                    let _ = platform::fileops::set_positions(&old);
-                    RunResult::plain("Icons are back where they were")
-                }
+                Undo::Tidy(old) => match platform::fileops::set_positions(&old) {
+                    Ok(()) => RunResult::plain("Icons are back where they were"),
+                    Err(_) => RunResult {
+                        title: "Some icons didn't move back".into(),
+                        detail: Some("Explorer didn't accept every move. No files were changed.".into()),
+                        can_undo: false,
+                        is_error: true,
+                    },
+                },
             };
             let _ = tx.send(r);
         });
@@ -815,6 +823,11 @@ impl App {
         self.countdown_until = None;
         self.model.delete_countdown = None;
         self.teardown();
+    }
+
+    /// Files are being changed (or put back) right now.
+    fn busy(&self) -> bool {
+        self.model.applying || self.job.is_some() || self.pending_finish.is_some()
     }
 
     /// Removing the floor is the whole restore: the real desktop was never changed.
@@ -931,8 +944,13 @@ impl ApplicationHandler for App {
         }
         match event {
             WindowEvent::CloseRequested if is_panel => {
-                self.stop_and_restore();
-                el.exit();
+                // Quitting mid-batch would cut the file action off and leave windows minimised.
+                if self.busy() {
+                    self.exit_requested = true;
+                } else {
+                    self.stop_and_restore();
+                    el.exit();
+                }
             }
             WindowEvent::Resized(size) => {
                 let gpu = self.gpu.as_ref().unwrap();
@@ -1004,6 +1022,11 @@ impl ApplicationHandler for App {
             }
         }
         self.poll_jobs();
+        if self.exit_requested && !self.busy() {
+            self.teardown();
+            el.exit();
+            return;
+        }
         self.sync();
         let running = self.floor.is_some() || self.prep.is_some() || self.job.is_some() || self.pending_finish.is_some();
         // Drawn from here rather than on RedrawRequested: Windows hands out WM_PAINT only when the

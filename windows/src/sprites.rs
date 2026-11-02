@@ -36,16 +36,23 @@ pub struct Fonts {
     pub semibold: FontVec,
 }
 
+/// The first candidate that loads, with its bytes (FontVec can't be cloned).
+fn load_font_bytes(candidates: &[&str]) -> Option<(FontVec, Vec<u8>)> {
+    candidates.iter().find_map(|p| {
+        std::fs::read(p)
+            .ok()
+            .and_then(|b| FontVec::try_from_vec(b.clone()).ok().map(|f| (f, b)))
+    })
+}
+
 fn load_font(candidates: &[&str]) -> Option<FontVec> {
-    candidates
-        .iter()
-        .find_map(|p| std::fs::read(p).ok().and_then(|b| FontVec::try_from_vec(b).ok()))
+    load_font_bytes(candidates).map(|(f, _)| f)
 }
 
 pub fn fonts() -> &'static Fonts {
     static F: OnceLock<Fonts> = OnceLock::new();
     F.get_or_init(|| {
-        let regular = load_font(&[
+        let (regular, regular_bytes) = load_font_bytes(&[
             "C:\\Windows\\Fonts\\segoeui.ttf",
             "/usr/share/fonts/noto/NotoSans-Regular.ttf",
             "/usr/share/fonts/TTF/DejaVuSans.ttf",
@@ -53,6 +60,7 @@ pub fn fonts() -> &'static Fonts {
             "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
         ])
         .expect("no usable font found");
+        // No bold face around: the regular one stands in.
         let semibold = load_font(&[
             "C:\\Windows\\Fonts\\seguisb.ttf",
             "C:\\Windows\\Fonts\\segoeuib.ttf",
@@ -60,10 +68,7 @@ pub fn fonts() -> &'static Fonts {
             "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         ])
-        .unwrap_or_else(|| {
-            FontVec::try_from_vec(std::fs::read("C:\\Windows\\Fonts\\segoeui.ttf").unwrap_or_default())
-                .unwrap_or_else(|_| load_font(&["/usr/share/fonts/TTF/DejaVuSans.ttf"]).unwrap())
-        });
+        .unwrap_or_else(|| FontVec::try_from_vec(regular_bytes).expect("font loaded once already"));
         Fonts { regular, semibold }
     })
 }

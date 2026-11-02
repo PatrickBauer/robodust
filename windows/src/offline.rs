@@ -79,7 +79,7 @@ pub fn run(o: Options) {
         // The track buffer needs every frame to build up, so render even when not dumping.
         if due {
             let img = r.render_to_image(&s, dt, 1.0);
-            let path = format!("{}/frame_{:06.2}.png", o.dump_dir, times[next]);
+            let path = format!("{}/frame_{next:02}_{:06.2}.png", o.dump_dir, times[next]);
             img.save(&path).expect("save png");
             eprintln!("{path} phase={:?} collected={}/{}", s.phase, s.collected, s.items.len());
             next += 1;

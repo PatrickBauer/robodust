@@ -35,7 +35,7 @@ cargo build --release --target x86_64-pc-windows-gnu
 
 The result is a single `robodust.exe` with no installer and nothing else to ship.
 
-On Linux and macOS it builds too, but only runs the sample mess. That's handy for working on the robot without a Windows machine: `--dump 5,12,30 --out frames` renders those moments of a run to PNG files without opening a window.
+On Linux and macOS it builds too, but only runs the sample mess (on Linux the sound needs the ALSA headers: `alsa-lib` on Arch, `libasound2-dev` on Debian and Ubuntu). That's handy for working on the robot without a Windows machine: `--dump 5,12,30 --out frames` renders those moments of a run to PNG files without opening a window.
 
 ## Testing on a real desktop
 
