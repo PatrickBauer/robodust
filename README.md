@@ -58,7 +58,7 @@ Start with the sample mess. The first real run will ask for Finder and Desktop a
 
 ## Windows
 
-There's a Windows port in [`windows/`](windows/README.md). It reads your real desktop from Explorer and draws the same robot with wgpu. It only tidies up or moves things to the Recycle Bin; it has no Delete.
+There's a Windows port in [`windows/`](windows/README.md). It reads your real desktop from Explorer and draws the same robot with wgpu. It only tidies up or moves things to the Recycle Bin; it has no Delete. **[Download for Windows](https://github.com/PatrickBauer/robodust/releases/latest/download/RoboDust-Windows.exe)** (Windows 10 or 11, 64-bit).
 
 ## Helping out
 

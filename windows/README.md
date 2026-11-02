@@ -4,6 +4,8 @@ The same robot vacuum, ported to Windows 10 and 11. It reads your real desktop i
 
 ![RoboDust cleaning the sample mess on Windows 11](docs/robodust-windows.jpg)
 
+**[Download for Windows](https://github.com/PatrickBauer/robodust/releases/latest/download/RoboDust-Windows.exe)** (Windows 10 or 11, 64-bit). It's a single program with nothing to install. It isn't signed yet, so the first time Windows SmartScreen says it "protected your PC": click **More info**, then **Run anyway**.
+
 It's a separate program from the Mac app, written in Rust: [wgpu](https://wgpu.rs) for the drawing (the Metal shaders are ported to WGSL in [`src/shaders.wgsl`](src/shaders.wgsl)), [egui](https://github.com/emilk/egui) for the panel, and cpal for the synthesised sounds. The simulation in [`src/sim.rs`](src/sim.rs) is a straight port of `Sim.swift`, so the robot behaves the same.
 
 ## What's different from the Mac
@@ -35,6 +37,8 @@ cargo build --release --target x86_64-pc-windows-gnu
 ```
 
 The result is a single `robodust.exe` with no installer and nothing else to ship.
+
+Releases are built by GitHub Actions ([`.github/workflows/windows.yml`](../.github/workflows/windows.yml)) the same way: push a tag like `windows-v0.1.0` (matching the version in `Cargo.toml`) and it publishes `RoboDust-Windows.exe` as a release.
 
 On Linux and macOS it builds too, but only runs the sample mess (on Linux the sound needs the ALSA headers: `alsa-lib` on Arch, `libasound2-dev` on Debian and Ubuntu). That's handy for working on the robot without a Windows machine: `--dump 5,12,30 --out frames` renders those moments of a run to PNG files without opening a window.
 
