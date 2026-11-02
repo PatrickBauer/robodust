@@ -3,23 +3,201 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>RoboDust</title>
-<style>
-  :root { color-scheme: light dark; --bg: #f6f6f4; --fg: #1a1a1a; --muted: #6b6b68; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #141414; --fg: #f0f0ee; --muted: #9a9a96; } }
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box;
-         background: var(--bg); color: var(--fg); font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-  main { max-width: 32rem; }
-  h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 .5rem; font-weight: 600; }
-  p { margin: 0; color: var(--muted); }
-  a { color: inherit; }
-</style>
+<title>RoboDust: a robot vacuum for your Mac desktop</title>
+<meta name="description" content="RoboDust is a robot vacuum for your Mac desktop. It maps the mess, sucks up your files one by one, and changes nothing until you say so.">
+<meta property="og:title" content="RoboDust">
+<meta property="og:description" content="A robot vacuum for your Mac desktop. It drives around your screen and eats your files.">
+<meta property="og:image" content="https://robodust.muhraufan.com/assets/share.jpg">
+<meta property="og:url" content="https://robodust.muhraufan.com">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main>
-  <h1>RoboDust is a robot vacuum for your Mac desktop.</h1>
-  <p>Coming soon, from <a href="https://muhraufan.com">Muhammad Raufan Yusup</a>.</p>
+
+<header>
+  <div class="col">
+    <a class="brand" href="#top"><img src="assets/icon.png" alt="" width="28" height="28">RoboDust</a>
+    <div class="header-actions">
+      <a class="icon-link" href="https://github.com/muhraufan/robodust" target="_blank" rel="noopener" aria-label="RoboDust on GitHub"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+      <a class="btn small" href="https://robodust.muhraufan.com/releases/RoboDust-latest.dmg">Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+<section class="hero col">
+  <img class="hero-icon" src="assets/icon-large.png" alt="The RoboDust app icon: a robot vacuum seen from above" width="96" height="96">
+  <p class="display"><b>RoboDust</b> is a robot vacuum for your Mac desktop. It maps the mess, <b>sucks up your files one by one,</b> and drives them back to its dock. <b>Nothing really changes until you say so.</b></p>
+  <p class="display">It’s free! Works for Macs on macOS 14 or later.</p>
+  <div class="actions">
+    <a class="btn" href="https://robodust.muhraufan.com/releases/RoboDust-latest.dmg">Download for Mac</a>
+    <a class="btn soft" href="#demo">Play with it</a>
+  </div>
+</section>
+
+<section class="demo-section" id="demo">
+  <div class="stage" id="stage">
+    <canvas id="floor" aria-label="A wooden floor scattered with desktop files. A small robot vacuum drives around and sucks them up." role="img"></canvas>
+    <div class="hud" id="hud" aria-live="polite">
+      <div class="hud-row" id="hudStatus">
+        <span class="led" id="led"></span>
+        <span class="hud-text" id="status">Waiting on the dock</span>
+        <span class="hud-count" id="count"></span>
+      </div>
+      <div class="hud-actions" id="hudActions" hidden></div>
+    </div>
+  </div>
+  <div class="col demo-notes">
+    <p class="small-copy"><b>Go on, annoy it.</b> Pick the robot up and it complains. Throw a file at it. Put your cursor in its way. Big files make it struggle.</p>
+    <div class="demo-controls">
+      <span class="control-label">After cleaning</span>
+      <div class="segmented" role="radiogroup" aria-label="After cleaning" id="modes">
+        <button role="radio" aria-checked="false" data-mode="tidy">Tidy up</button>
+        <button role="radio" aria-checked="true" data-mode="trash">Trash</button>
+        <button role="radio" aria-checked="false" data-mode="delete">Delete</button>
+      </div>
+    </div>
+    <p class="fine">Only pretend files here. Nothing on your computer is touched by this page.</p>
+  </div>
+</section>
+
+<section class="col">
+  <p class="display">It’s very silly, and <b>very careful with your files.</b></p>
+</section>
+
+<section class="wide cards">
+  <article class="card">
+    <div class="visual">
+      <div class="mini-panel">
+        <strong>Move 281 items to the Trash?</strong>
+        <span>2.6 GB in files, plus 3 folders.</span>
+        <div class="mini-review"><i class="check on"></i>Screenshot 2026-10-12.png</div>
+        <div class="mini-review"><i class="check"></i>my-passport.png</div>
+        <div class="mini-btn primary">Move to Trash</div>
+        <div class="mini-btn">Put everything back</div>
+      </div>
+    </div>
+    <p><b>One last click.</b> Everything lands in the dock first. Your files only change when you press the button, and you can untick anything you want to keep. Know what you’re doing? One switch skips the question.</p>
+  </article>
+
+  <article class="card">
+    <div class="visual">
+      <div class="mini-list">
+        <div><i class="dot green"></i>Saved 2 minutes ago<em>left alone</em></div>
+        <div><i class="dot green"></i>taxes-final.pdf, locked<em>left alone</em></div>
+        <div><i class="dot green"></i>my-side-project, has .git<em>left alone</em></div>
+        <div class="gone"><i class="dot"></i>Screenshot 2024-03-02.png<em>nom</em></div>
+      </div>
+    </div>
+    <p><b>It leaves the important stuff alone.</b> On Trash and Delete runs, anything changed in the last 10 minutes stays put, along with locked files, code projects and apps. A file that changes mid-clean flies right back.</p>
+  </article>
+
+  <article class="card">
+    <div class="visual">
+      <div class="mini-strain">
+        <div class="mini-file"><span>weekend-take-12.mov</span><em>4.2 GB</em></div>
+        <div class="strain-bar"><i></i></div>
+        <div class="mini-status">Big file. Straining…</div>
+      </div>
+    </div>
+    <p><b>Big files fight back.</b> A screenshot goes straight down. A 4 GB video slows the robot to a crawl, jams the brushes, and you can hear the motor sag until it finally gulps.</p>
+  </article>
+
+  <article class="card">
+    <div class="visual">
+      <div class="mini-panel result">
+        <strong>Moved 277 items to the Trash</strong>
+        <span>4 left alone for safety.</span>
+        <div class="mini-row"><div class="mini-btn">Undo</div><div class="mini-btn">Done</div></div>
+      </div>
+    </div>
+    <p><b>Changed your mind?</b> Trash and Tidy up both have an Undo. Delete is forever, so even with the question switched off, it counts down for 10 seconds with a big Stop button.</p>
+  </article>
+</section>
+
+<section class="col">
+  <p class="display">A real little machine. <b>Light on your Mac.</b></p>
+</section>
+
+<section class="wide stats">
+  <figure class="stat">
+    <div class="stat-big">4<small> MB</small></div>
+    <figcaption>to download, the whole app with its dock and all its noises</figcaption>
+  </figure>
+  <figure class="stat">
+    <div class="stat-big">60<small> fps</small></div>
+    <figcaption>on a 5K display, at about 8% of the processor while it cleaned</figcaption>
+  </figure>
+  <figure class="stat">
+    <div class="stat-big">0</div>
+    <figcaption>files changed until your last click, unless you switch that off</figcaption>
+  </figure>
+</section>
+<div class="col"><p class="fine stat-note">Speed measured on a Mac with an M4 chip and a Studio Display, cleaning the built-in sample mess. Your Mac will differ.</p></div>
+
+<section class="col">
+  <p class="display">And the details <b>nobody asked for.</b></p>
+</section>
+
+<section class="wide grid">
+  <div class="item"><h3>It maps first</h3><p>A lidar sweep finds every file before it starts, then it cleans in tidy rows.</p></div>
+  <div class="item"><h3>Labels go first</h3><p>File names tear off and flutter around before getting sucked in on their own.</p></div>
+  <div class="item"><h3>It empties itself</h3><p>When the bin fills up it reverses onto its dock, and you can watch the bag fill.</p></div>
+  <div class="item"><h3>It hates being picked up</h3><p>Grab it mid-clean and it complains until you put it down.</p></div>
+  <div class="item"><h3>Your cursor is a foot</h3><p>Get in its way and it bumps you, backs up, and goes around.</p></div>
+  <div class="item"><h3>Tidy up, gently</h3><p>Sorts your icons into neat columns by type. Only the icons move, never the files.</p></div>
+  <div class="item"><h3>A sample mess</h3><p>Just here for the show? It has a fake desktop full of junk, and nothing real gets touched.</p></div>
+  <div class="item"><h3>Happy with iCloud</h3><p>Files that aren’t downloaded go straight to the Trash, with no download and no alerts.</p></div>
+  <div class="item"><h3>Updates on its own</h3><p>New versions arrive quietly and install the next time you quit.</p></div>
+</section>
+
+<section class="col maker">
+  <p class="display">Made in Tokyo by <span class="avatar"><img src="assets/raufan.jpg" alt="" width="34" height="34"></span> <b>Raufan,</b> a product designer with hundreds of screenshots on the desktop and no plans to sort them. So I built something that would.</p>
+</section>
+
+<section class="col faq">
+  <details><summary>Is it free?</summary><p>Yes, with no account and no ads. If you’d like to help me make more of these, there’s a way to chip in at the bottom of this page.</p></details>
+  <details><summary>Can I see the code?</summary><p>Yes, it’s all <a href="https://github.com/muhraufan/robodust" target="_blank" rel="noopener">on GitHub</a> under the MIT license. Good for an app that deletes things. Ideas and fixes are welcome too, and I read everything.</p></details>
+  <details><summary>Does it really delete my files?</summary><p>Only if you pick Delete and press the button. It can’t be undone, so I’d start with Trash. The sample mess never touches anything real.</p></details>
+  <details><summary>Which Macs does it run on?</summary><p>Apple silicon and Intel, on macOS 14 or later. It cleans your main display for now.</p></details>
+  <details><summary>Why does it ask for Finder and Desktop access?</summary><p>It reads where your icons sit and what they look like, so it can draw them in exactly the same places. Finder also does the moving when you choose Trash or Tidy up. The sample mess needs neither.</p></details>
+  <details><summary>What if my Desktop syncs with iCloud?</summary><p>It works, and it warns you first: anything you delete also disappears from your other devices, the same as if you’d done it yourself.</p></details>
+  <details><summary>What does it know about me?</summary><p>Your file names, sizes and thumbnails, only on your Mac, and only to draw them. They never leave it. The one thing it asks the internet is whether there’s a new version.</p></details>
+</section>
+
+<section class="col cta">
+  <p class="display"><b>Your desktop is a mess.</b> It’s fine. Everyone’s is.</p>
+  <div class="actions">
+    <a class="btn" href="https://robodust.muhraufan.com/releases/RoboDust-latest.dmg">Download for Mac</a>
+  </div>
+  <p class="fine">Free. 4 MB. macOS 14 or later. No account.</p>
+</section>
+
+<section class="wide support-wrap">
+  <div class="support">
+    <p class="display"><b>Made you smile?</b> RoboDust is free and open source. A star tells me to keep going, and a little support lets me make more software that’s fun to use.</p>
+    <div class="actions">
+      <a class="btn soft-white" href="https://github.com/muhraufan/robodust" target="_blank" rel="noopener"><svg class="star" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .9l2.2 4.6 5 .7-3.6 3.5.9 5L8 12.3l-4.5 2.4.9-5L.8 6.2l5-.7z"/></svg>Star on GitHub</a>
+      <a class="btn soft-white" href="https://www.buymeacoffee.com/notmegapixels" target="_blank" rel="noopener">Buy the robot a new bag</a>
+    </div>
+  </div>
+</section>
+
 </main>
+
+<footer>
+  <div class="col">
+    <span>RoboDust · © 2026 Muhammad Raufan Yusup</span>
+    <span class="footer-links"><a href="https://github.com/muhraufan/robodust" target="_blank" rel="noopener">GitHub</a><a href="https://muhraufan.com" target="_blank" rel="noopener">muhraufan.com</a></span>
+  </div>
+</footer>
+
+<script src="demo.js"></script>
 </body>
 </html>
