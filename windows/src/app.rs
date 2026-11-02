@@ -821,10 +821,14 @@ impl App {
                             is_error: true,
                         }
                     } else if r.is_err() {
+                        // Some icons may have moved anyway, so Undo stays on offer.
+                        self.undo = Some(Undo::Tidy(old));
                         RunResult {
                             title: "Tidy up didn't finish".into(),
-                            detail: Some("Explorer didn't accept every move. No files were changed.".into()),
-                            can_undo: false,
+                            detail: Some(
+                                "Explorer didn't accept every move. No files were changed, and Undo puts the icons that moved back.".into(),
+                            ),
+                            can_undo: true,
                             is_error: true,
                         }
                     } else {
@@ -886,6 +890,10 @@ impl App {
         }
         self.prep = None;
         self.model.stage = Stage::Ready;
+        // Nothing runs any more, so the panel's periodic redraw stops: show the new stage now.
+        if let Some(p) = &self.panel {
+            p.s.window.request_redraw();
+        }
     }
 }
 

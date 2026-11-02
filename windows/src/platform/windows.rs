@@ -172,7 +172,13 @@ pub fn read_desktop(screen: &Screen) -> Result<Vec<DesktopEntry>, DesktopError> 
     ));
     let public = known_folder(&FOLDERID_PublicDesktop);
     let mine = desktop_dir();
-    let cloud_root = std::env::var("OneDrive").ok().map(PathBuf::from);
+    // Personal and work accounts can both be set up; the Desktop may live under either.
+    let cloud_roots: Vec<String> = ["OneDrive", "OneDriveConsumer", "OneDriveCommercial"]
+        .iter()
+        .filter_map(|v| std::env::var(v).ok())
+        .filter(|r| !r.is_empty())
+        .map(|r| r.trim_end_matches('\\').to_lowercase())
+        .collect();
     let mut out = Vec::new();
     for vi in &items {
         let Ok(pt) = (unsafe { view.GetItemPosition(vi.pidl) }) else {
@@ -216,7 +222,8 @@ pub fn read_desktop(screen: &Screen) -> Result<Vec<DesktopEntry>, DesktopError> 
                 }
                 e.missing = true;
             }
-            e.cloud = cloud_root.as_ref().is_some_and(|r| p.starts_with(r));
+            let lower = p.to_string_lossy().to_lowercase();
+            e.cloud = cloud_roots.iter().any(|r| lower.starts_with(&format!("{r}\\")));
         }
         out.push(e);
     }
@@ -711,7 +718,9 @@ pub mod fileops {
 
     /// Reads the Recycle Bin's own index files ($I…) on the cleaned folder's drive, newest first.
     fn recycle_records(root: &Path, since: SystemTime) -> Vec<Record> {
-        let drive: PathBuf = root.components().take(2).collect();
+        // The real location: a Desktop behind a junction or mount point lives on another volume.
+        let real = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
+        let drive: PathBuf = real.components().take(2).collect();
         let since_ft = since
             .duration_since(SystemTime::UNIX_EPOCH)
             .map(|d| d.as_secs() + 11_644_473_600)
@@ -758,7 +767,8 @@ pub mod fileops {
     pub fn undo_trash(items: &[Trashed]) -> usize {
         let mut restored = Vec::new();
         for t in items {
-            if t.original.exists() || !t.recycled.exists() {
+            // symlink_metadata: a recycled link counts, wherever its target went.
+            if std::fs::symlink_metadata(&t.original).is_ok() || std::fs::symlink_metadata(&t.recycled).is_err() {
                 continue;
             }
             if std::fs::rename(&t.recycled, &t.original).is_ok() {
